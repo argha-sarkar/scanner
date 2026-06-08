@@ -1,0 +1,205 @@
+{% extends 'layout.html' %}
+
+{% block title %}AegisScan - Security Console & Dashboard{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <div class="section-header">
+    <div>
+      <h1 class="section-title">AegisScan Security Console</h1>
+      <p style="color: var(--text-secondary); margin-top: 4px; font-size: 14px;">Scan targets for configuration errors, SSL vulnerabilities, and HTTP disclosures.</p>
+    </div>
+  </div>
+
+  <!-- Metric Overview Cards -->
+  <div class="dashboard-grid">
+    <div class="metric-card">
+      <div class="metric-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-value">{{ metrics.total_scans }}</span>
+        <span class="metric-label">Total Scans Run</span>
+      </div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-icon success" style="color: var(--severity-low);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-value">{{ "%.1f"|format(metrics.avg_score) if metrics.avg_score else "100.0" }}</span>
+        <span class="metric-label">Avg Health Score</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon danger">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-value">{{ metrics.total_high_vulns }}</span>
+        <span class="metric-label">High Vulns Logged</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trigger Scan Form -->
+  <div class="glass-card scan-config-card">
+    <h2 class="scan-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      Initiate New Scan
+    </h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} animate-fade-in">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form class="scan-form" method="POST" action="{{ url_for('trigger_scan') }}">
+      <div class="input-group-row">
+        <div class="url-input-container">
+          <input 
+            type="url" 
+            id="target-url-input"
+            name="target_url" 
+            class="url-input" 
+            placeholder="Enter target URL (e.g. https://example.com)" 
+            required
+            autocomplete="off"
+          >
+        </div>
+        <button type="submit" id="trigger-scan-btn" class="btn btn-primary">
+          Start Scan
+        </button>
+      </div>
+      
+      <div class="scan-options-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="chk-ssl" name="check_ssl" class="checkbox-input" checked disabled>
+          SSL/TLS Certificate
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="chk-headers" name="check_headers" class="checkbox-input" checked disabled>
+          Security Headers
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="chk-performance" name="check_performance" class="checkbox-input" checked disabled>
+          Latency & Speeds
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="chk-seo" name="check_seo" class="checkbox-input" checked disabled>
+          SEO & Hierarchy
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="chk-best-practices" name="check_best_practices" class="checkbox-input" checked disabled>
+          Broken Links (Audit)
+        </label>
+      </div>
+    </form>
+  </div>
+
+  <!-- Scan History Table -->
+  <div class="section-header">
+    <h2 class="section-title">Recent Audits</h2>
+  </div>
+  
+  <div class="glass-card history-card">
+    <div class="table-responsive">
+      <table class="scan-table">
+        <thead>
+          <tr>
+            <th>Target URL</th>
+            <th>Date Initiated</th>
+            <th>Status</th>
+            <th>Health Score</th>
+            <th>Vulns (H/M/L)</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for scan in scans %}
+            <tr>
+              <td class="target-cell">{{ scan.target_url }}</td>
+              <td style="color: var(--text-secondary);">{{ scan.created_at }}</td>
+              <td>
+                {% if scan.status == 'completed' %}
+                  <span class="badge badge-low">Completed</span>
+                {% elif scan.status == 'scanning' %}
+                  <span class="status-spinner"></span>
+                  <span class="status-text" style="color: var(--primary);">Scanning...</span>
+                {% elif scan.status == 'pending' %}
+                  <span class="status-spinner" style="border-top-color: var(--text-secondary);"></span>
+                  <span class="status-text" style="color: var(--text-secondary);">Pending...</span>
+                {% else %}
+                  <span class="badge badge-high">Failed</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if scan.status == 'completed' %}
+                  {% if scan.score >= 80 %}
+                    <span class="score-badge score-high">{{ scan.score }}</span>
+                  {% elif scan.score >= 50 %}
+                    <span class="score-badge score-medium">{{ scan.score }}</span>
+                  {% else %}
+                    <span class="score-badge score-low">{{ scan.score }}</span>
+                  {% endif %}
+                {% else %}
+                  <span style="color: var(--text-muted);">--</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if scan.status == 'completed' %}
+                  <span style="color: var(--severity-high); font-weight: 700;">{{ scan.vuln_count_high }}</span> /
+                  <span style="color: var(--severity-medium); font-weight: 700;">{{ scan.vuln_count_medium }}</span> /
+                  <span style="color: var(--severity-low); font-weight: 700;">{{ scan.vuln_count_low }}</span>
+                {% else %}
+                  <span style="color: var(--text-muted);">--</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if scan.status == 'completed' %}
+                  <a href="{{ url_for('view_report', scan_id=scan.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">View Report</a>
+                {% elif scan.status == 'failed' %}
+                  <a href="{{ url_for('view_report', scan_id=scan.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px; border-color: rgba(239,68,68,0.3); color: #fca5a5;">View Error</a>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 13px;">Processing</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <div class="empty-icon">📁</div>
+                  <p>No scans found in history. Submit a target URL above to start security audit.</p>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if active_scans_exist %}
+<script>
+  // Auto-refresh the page if there is an active background scan
+  setTimeout(function() {
+    location.reload();
+  }, 4000);
+</script>
+{% endif %}
+{% endblock %}

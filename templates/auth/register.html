@@ -1,0 +1,196 @@
+{% extends 'layout.html' %}
+
+{% block title %}AegisScan - Create Account{% endblock %}
+
+{% block styles %}
+<style>
+  .auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: radial-gradient(circle at 50% 50%, #151528 0%, #0a0a0f 100%);
+    width: 100%;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: rgba(18, 18, 30, 0.75);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    animation: authFadeIn 0.5s ease-out;
+  }
+
+  @keyframes authFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .auth-logo {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 16px;
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.55);
+  }
+
+  .auth-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+    background: linear-gradient(to right, #fff, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-input {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    transition: all 0.2s ease;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+  }
+
+  .auth-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  .auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .auth-footer a {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .auth-footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">A</div>
+      <h1 class="auth-title">Get Started</h1>
+      <p class="auth-subtitle">Create your AegisScan developer account</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} animate-fade-in">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.register') }}">
+      <div class="form-group">
+        <label class="form-label" for="username-input">Username</label>
+        <input 
+          type="text" 
+          id="username-input" 
+          name="username" 
+          class="form-input" 
+          placeholder="Enter a username" 
+          required 
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password-input">Password</label>
+        <input 
+          type="password" 
+          id="password-input" 
+          name="password" 
+          class="form-input" 
+          placeholder="At least 6 characters" 
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm-password-input">Confirm Password</label>
+        <input 
+          type="password" 
+          id="confirm-password-input" 
+          name="confirm_password" 
+          class="form-input" 
+          placeholder="Repeat password" 
+          required
+        >
+      </div>
+
+      <button type="submit" id="register-submit" class="btn btn-primary auth-btn">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? 
+      <a id="login-link" href="{{ url_for('auth.login') }}">Sign In</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

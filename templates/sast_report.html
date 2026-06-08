@@ -1,0 +1,463 @@
+{% extends 'layout.html' %}
+
+{% block title %}SAST Analysis Report - {{ scan.filename }}{% endblock %}
+
+{% block styles %}
+<style>
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .report-meta {
+    flex-grow: 1;
+  }
+
+  .report-target {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+
+  .report-date {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Code view component */
+  .code-viewer-card {
+    padding: 0;
+    overflow: hidden;
+    margin-bottom: 40px;
+    border: 1px solid var(--border-color);
+  }
+
+  .code-titlebar {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .code-container {
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    background: #06060a;
+    padding: 24px 0;
+  }
+
+  .code-line-row {
+    display: flex;
+    width: 100%;
+    padding: 0 24px;
+  }
+
+  .code-line-row.has-issue {
+    background-color: rgba(239, 68, 68, 0.08);
+    border-left: 3px solid var(--severity-high);
+    padding-left: 21px;
+  }
+
+  .code-line-num {
+    width: 40px;
+    text-align: right;
+    color: var(--text-muted);
+    user-select: none;
+    margin-right: 24px;
+  }
+
+  .code-line-text {
+    color: #cbd5e1;
+    white-space: pre;
+  }
+
+  /* Findings summary style */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 32px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 768px) {
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .score-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+  }
+
+  .circular-progress {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .score-circle-high {
+    background: radial-gradient(closest-side, var(--bg-secondary) 85%, transparent 86% 100%),
+                conic-gradient(var(--severity-low) {{ scan.score }}%, rgba(255,255,255,0.05) 0);
+  }
+
+  .score-circle-medium {
+    background: radial-gradient(closest-side, var(--bg-secondary) 85%, transparent 86% 100%),
+                conic-gradient(var(--severity-medium) {{ scan.score }}%, rgba(255,255,255,0.05) 0);
+  }
+
+  .score-circle-low {
+    background: radial-gradient(closest-side, var(--bg-secondary) 85%, transparent 86% 100%),
+                conic-gradient(var(--severity-high) {{ scan.score }}%, rgba(255,255,255,0.05) 0);
+  }
+
+  .circle-value {
+    font-size: 36px;
+    font-weight: 800;
+  }
+
+  .score-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .findings-overview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .finding-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .finding-count {
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .finding-count.high { color: var(--severity-high); }
+  .finding-count.medium { color: var(--severity-medium); }
+  .finding-count.low { color: var(--severity-low); }
+
+  .finding-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Issue card list */
+  .issue-card {
+    margin-bottom: 16px;
+    border-left: 4px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  .issue-card.severity-high { border-left-color: var(--severity-high); }
+  .issue-card.severity-medium { border-left-color: var(--severity-medium); }
+  .issue-card.severity-low { border-left-color: var(--severity-low); }
+
+  .issue-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    gap: 16px;
+  }
+
+  .issue-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-grow: 1;
+    flex-wrap: wrap;
+  }
+
+  .issue-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .issue-line-badge {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    font-weight: 700;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: rgba(99, 102, 241, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .issue-details {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .details-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .details-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .code-preview-finding {
+    background: #000;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    color: #ef4444;
+    font-size: 13px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .remediation-box {
+    background-color: rgba(99, 102, 241, 0.03);
+    border: 1px dashed rgba(99, 102, 241, 0.25);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('sast_dashboard') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to SAST Dashboard
+    </a>
+  </div>
+
+  <div class="report-header">
+    <div class="report-meta">
+      <h1 class="report-target">{{ scan.filename }}</h1>
+      <div class="report-date">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        Analysis run on: {{ scan.created_at }}
+      </div>
+    </div>
+    <div class="action-buttons">
+      <button onclick="window.print()" class="btn btn-secondary">Print Report</button>
+    </div>
+  </div>
+
+  <!-- Summary Grid -->
+  <div class="summary-grid">
+    <div class="glass-card score-card">
+      {% if scan.score >= 80 %}
+        <div class="circular-progress score-circle-high">
+      {% elif scan.score >= 50 %}
+        <div class="circular-progress score-circle-medium">
+      {% else %}
+        <div class="circular-progress score-circle-low">
+      {% endif %}
+          <span class="circle-value">{{ scan.score }}</span>
+        </div>
+        <span class="score-label">Quality Score</span>
+      </div>
+
+      <div class="findings-overview">
+        <div class="finding-box">
+          <span class="finding-count high">{{ scan.vuln_count_high }}</span>
+          <span class="finding-label">High Severity</span>
+        </div>
+        <div class="finding-box">
+          <span class="finding-count medium">{{ scan.vuln_count_medium }}</span>
+          <span class="finding-label">Medium Severity</span>
+        </div>
+        <div class="finding-box">
+          <span class="finding-count low">{{ scan.vuln_count_low }}</span>
+          <span class="finding-label">Low Severity</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Line-by-Line Highlight Viewer -->
+    <div class="section-header">
+      <h2 class="section-title">Source Viewer</h2>
+    </div>
+    
+    <div class="glass-card code-viewer-card">
+      <div class="code-titlebar">{{ scan.filename }}</div>
+      <div class="code-container">
+        {% for line in formatted_code %}
+          {% set line_has_issue = [] %}
+          {% for issue in issues %}
+            {% if issue.line_number == line.number %}
+              {% set _ = line_has_issue.append(1) %}
+            {% endif %}
+          {% endfor %}
+          <div class="code-line-row {% if line_has_issue %}has-issue{% endif %}" id="src-line-{{ line.number }}">
+            <span class="code-line-num">{{ line.number }}</span>
+            <span class="code-line-text">{{ line.text }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- SAST Scan Findings -->
+    <div class="section-header">
+      <h2 class="section-title">Static Analysis Findings ({{ issues|length }})</h2>
+    </div>
+
+    {% for issue in issues %}
+      <div class="glass-card issue-card severity-{{ issue.severity }}">
+        <div class="issue-summary" onclick="toggleDetails('issue-details-{{ issue.id }}', 'arrow-{{ issue.id }}')">
+          <div class="issue-title-group">
+            {% if issue.severity == 'high' %}
+              <span class="badge badge-high">High</span>
+            {% elif issue.severity == 'medium' %}
+              <span class="badge badge-medium">Medium</span>
+            {% else %}
+              <span class="badge badge-low">Low</span>
+            {% endif %}
+            
+            <span class="issue-title">{{ issue.title }}</span>
+            <span class="issue-line_number issue-line-badge">Line {{ issue.line_number }}</span>
+            <span class="issue-category" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 4px;">{{ issue.category }}</span>
+          </div>
+          
+          <svg id="arrow-{{ issue.id }}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(0deg); transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+
+        <div id="issue-details-{{ issue.id }}" class="issue-details" style="display: none;">
+          <div>
+            <div class="details-label">Description</div>
+            <div class="details-text">{{ issue.description }}</div>
+          </div>
+          {% if issue.code_line %}
+            <div>
+              <div class="details-label">Vulnerable Code Highlight</div>
+              <div class="code-preview-finding">
+                {{ issue.code_line }}
+              </div>
+            </div>
+          {% endif %}
+          <div>
+            <div class="details-label">Remediation Guide</div>
+            <div class="remediation-box">
+              {{ issue.remediation }}
+            </div>
+          </div>
+
+          <!-- Task Tracker and Assignment -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+            <div class="details-label">Task Assignment & Remediation Status</div>
+            <form action="{{ url_for('update_finding_task', finding_type='sast', finding_id=issue.id) }}" method="POST" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+              <input type="hidden" name="redirect_url" value="{{ request.path }}">
+              <div style="display: flex; flex-direction: column; gap: 6px; min-width: 180px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Assigned To</span>
+                <input type="text" name="assigned_to" class="url-input" style="height: 38px; padding: 6px 12px; font-size: 13px; margin-bottom: 0;" value="{{ issue.task.assigned_to }}" placeholder="e.g. John Doe">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px; min-width: 140px;">
+                <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Status</span>
+                <select name="status" class="url-input" style="height: 38px; padding: 6px; font-size: 13px; background: rgba(0,0,0,0.2); margin-bottom: 0;">
+                  <option value="Open" {% if issue.task.status == 'Open' %}selected{% endif %}>Open</option>
+                  <option value="In Progress" {% if issue.task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                  <option value="Resolved" {% if issue.task.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-secondary" style="height: 38px; padding: 0 16px; font-size: 13px;">Update Task</button>
+            </form>
+          </div>
+
+          <!-- Comments Discussion -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+            <div class="details-label">Discussion Thread ({{ issue.comments|length }})</div>
+            
+            <div class="comments-list" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+              {% for comment in issue.comments %}
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-sm);">
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; font-weight: 600;">
+                    <span style="color: var(--primary);">@{{ comment.username }}</span>
+                    <span style="color: var(--text-muted);">{{ comment.created_at }}</span>
+                  </div>
+                  <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.4;">{{ comment.text }}</div>
+                </div>
+              {% endfor %}
+            </div>
+            
+            <form action="{{ url_for('add_finding_comment', finding_type='sast', finding_id=issue.id) }}" method="POST" style="display: flex; gap: 12px; margin-bottom: 0;">
+              <input type="hidden" name="redirect_url" value="{{ request.path }}">
+              <input type="text" name="text" class="url-input" style="height: 38px; padding: 6px 12px; font-size: 13px; flex-grow: 1; margin-bottom: 0;" placeholder="Write a comment..." required autocomplete="off">
+              <button type="submit" class="btn btn-primary" style="height: 38px; padding: 0 16px; font-size: 13px;">Post</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="glass-card" style="text-align: center; padding: 48px; color: var(--text-secondary);">
+        🎉 Excellent! No code vulnerabilities or syntax errors were identified in this file.
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleDetails(detailsId, arrowId) {
+    const details = document.getElementById(detailsId);
+    const arrow = document.getElementById(arrowId);
+    if (details.style.display === 'none') {
+      details.style.display = 'flex';
+      arrow.style.transform = 'rotate(180deg)';
+    } else {
+      details.style.display = 'none';
+      arrow.style.transform = 'rotate(0deg)';
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AegisScan - Website Vulnerability & Error Platform{% endblock %}</title>
+  <meta name="description" content="A website vulnerability, configuration error, and security headers scanner platform.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/globals.css') }}">
+  {% block styles %}{% endblock %}
+</head>
+<body>
+  <div class="layout-container">
+    {% if session.get('user_id') %}
+      <!-- Sidebar Navigation for authenticated users -->
+      <aside class="sidebar">
+        <div>
+          <div class="logo-container">
+            <div class="logo-icon">A</div>
+            <div class="logo-text">AegisScan</div>
+          </div>
+          
+          <nav class="nav-links">
+            <a href="{{ url_for('dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+              Dashboard
+            </a>
+            <a href="{{ url_for('view_assets') }}" class="nav-item {% if active_page == 'assets' %}active{% endif %}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+              Asset Inventory
+            </a>
+            <a href="{{ url_for('history') }}" class="nav-item {% if active_page == 'history' %}active{% endif %}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
+              Scan History
+            </a>
+            <a href="{{ url_for('sast_dashboard') }}" class="nav-item {% if active_page == 'sast' %}active{% endif %}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+              Code Analyzer
+            </a>
+            <a href="{{ url_for('kb') }}" class="nav-item {% if active_page == 'kb' %}active{% endif %}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5v-15z"></path></svg>
+              Knowledge Base
+            </a>
+          </nav>
+        </div>
+        
+        <div class="sidebar-footer">
+          <div class="user-profile">
+            <div class="avatar">{{ session.get('username')[0] | upper if session.get('username') else 'U' }}</div>
+            <div class="user-info">
+              <span class="user-name">{{ session.get('username') }}</span>
+              <span class="user-role">SecOps Engineer</span>
+            </div>
+          </div>
+          <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Sign Out
+          </a>
+        </div>
+      </aside>
+    {% endif %}
+    
+    <!-- Main content area -->
+    <main class="main-content {% if not session.get('user_id') %}full-width{% endif %}">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  
+  {% block scripts %}{% endblock %}
+</body>
+</html>

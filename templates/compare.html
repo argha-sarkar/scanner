@@ -1,0 +1,195 @@
+{% extends 'layout.html' %}
+
+{% block title %}AegisScan - Compare Audits{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+  .compare-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  @media (max-width: 600px) {
+    .compare-header {
+      grid-template-columns: 1fr;
+    }
+    .vs-text {
+      margin: 8px 0;
+    }
+  }
+
+  .compare-panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+
+  .compare-url {
+    font-size: 16px;
+    font-weight: 700;
+    word-break: break-all;
+  }
+
+  .compare-score {
+    font-size: 48px;
+    font-weight: 800;
+    margin: 16px 0;
+  }
+
+  .vs-text {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-muted);
+  }
+
+  /* Compare Categories */
+  .diff-section {
+    margin-bottom: 32px;
+  }
+
+  .diff-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .diff-item {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .diff-item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .diff-item-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .diff-item-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <div style="margin-bottom: 24px;">
+    <a href="{{ url_for('history') }}" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to History
+    </a>
+  </div>
+
+  <div class="section-header">
+    <h1 class="section-title">Audit Comparison</h1>
+  </div>
+
+  <!-- Comparison Header panel -->
+  <div class="compare-header">
+    <div class="compare-panel">
+      <div class="compare-url">{{ scan_a.target_url }}</div>
+      <div class="compare-score" style="color: {% if scan_a.score >= 80 %}var(--severity-low){% elif scan_a.score >= 50 %}var(--severity-medium){% else %}var(--severity-high){% endif %};">
+        {{ scan_a.score }}
+      </div>
+      <div style="color: var(--text-secondary); font-size: 13px;">Scanned: {{ scan_a.created_at }}</div>
+    </div>
+    
+    <div class="vs-text">VS</div>
+
+    <div class="compare-panel">
+      <div class="compare-url">{{ scan_b.target_url }}</div>
+      <div class="compare-score" style="color: {% if scan_b.score >= 80 %}var(--severity-low){% elif scan_b.score >= 50 %}var(--severity-medium){% else %}var(--severity-high){% endif %};">
+        {{ scan_b.score }}
+      </div>
+      <div style="color: var(--text-secondary); font-size: 13px;">Scanned: {{ scan_b.created_at }}</div>
+    </div>
+  </div>
+
+  <!-- Comparison Results -->
+  <div class="glass-card">
+    <!-- 1. New Issues In B -->
+    <div class="diff-section">
+      <h3 class="diff-title" style="color: var(--severity-high);">
+        <span class="badge badge-high" style="font-size: 12px;">New</span>
+        Issues Introduced in Latest Audit ({{ new_issues|length }})
+      </h3>
+      {% for issue in new_issues %}
+        <div class="diff-item" style="border-left: 3px solid var(--severity-high);">
+          <div class="diff-item-left">
+            <span class="diff-item-title">{{ issue.title }}</span>
+            <span class="diff-item-desc">{{ issue.description }}</span>
+          </div>
+          <span class="badge {% if issue.severity == 'high' %}badge-high{% elif issue.severity == 'medium' %}badge-medium{% else %}badge-low{% endif %}">
+            {{ issue.severity }}
+          </span>
+        </div>
+      {% else %}
+        <p style="color: var(--text-secondary); font-size: 14px; padding: 12px 0;">No new issues were introduced.</p>
+      {% endfor %}
+    </div>
+
+    <!-- 2. Resolved Issues -->
+    <div class="diff-section">
+      <h3 class="diff-title" style="color: var(--severity-low);">
+        <span class="badge badge-low" style="font-size: 12px;">Resolved</span>
+        Issues Fixed ({{ resolved_issues|length }})
+      </h3>
+      {% for issue in resolved_issues %}
+        <div class="diff-item" style="border-left: 3px solid var(--severity-low);">
+          <div class="diff-item-left">
+            <span class="diff-item-title">{{ issue.title }}</span>
+            <span class="diff-item-desc">{{ issue.description }}</span>
+          </div>
+          <span class="badge badge-low">Fixed</span>
+        </div>
+      {% else %}
+        <p style="color: var(--text-secondary); font-size: 14px; padding: 12px 0;">No issues were resolved between these scans.</p>
+      {% endfor %}
+    </div>
+
+    <!-- 3. Constant Issues -->
+    <div class="diff-section">
+      <h3 class="diff-title">
+        <span class="badge badge-info" style="font-size: 12px;">Persistent</span>
+        Remaining / Unresolved Issues ({{ constant_issues|length }})
+      </h3>
+      {% for issue in constant_issues %}
+        <div class="diff-item">
+          <div class="diff-item-left">
+            <span class="diff-item-title">{{ issue.title }}</span>
+            <span class="diff-item-desc">{{ issue.description }}</span>
+          </div>
+          <span class="badge {% if issue.severity == 'high' %}badge-high{% elif issue.severity == 'medium' %}badge-medium{% else %}badge-low{% endif %}">
+            {{ issue.severity }}
+          </span>
+        </div>
+      {% else %}
+        <p style="color: var(--text-secondary); font-size: 14px; padding: 12px 0;">No persistent issues remaining.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

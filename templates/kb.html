@@ -1,0 +1,246 @@
+{% extends 'layout.html' %}
+
+{% block title %}AegisScan - Vulnerability Knowledge Base{% endblock %}
+
+{% block styles %}
+<style>
+  .kb-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+    margin-top: 24px;
+  }
+
+  @media (max-width: 900px) {
+    .kb-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .kb-sidebar {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    height: fit-content;
+    position: sticky;
+    top: 24px;
+  }
+
+  .kb-nav-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  .kb-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    list-style: none;
+  }
+
+  .kb-nav-link {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    display: block;
+  }
+
+  .kb-nav-link:hover, .kb-nav-link.active {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+  }
+
+  .kb-content {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .kb-article {
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 32px;
+  }
+
+  .kb-article-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .kb-article-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .kb-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+
+  .kb-code-block {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #cbd5e1;
+    overflow-x: auto;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <div class="section-header">
+    <div>
+      <h1 class="section-title">Security Knowledge Base</h1>
+      <p style="color: var(--text-secondary); margin-top: 4px; font-size: 14px;">Understand common vulnerabilities, header configurations, and server hardening guidelines.</p>
+    </div>
+  </div>
+
+  <div class="kb-grid">
+    <aside class="kb-sidebar">
+      <div class="kb-nav-title">Vulnerability List</div>
+      <ul class="kb-nav-list">
+        <li><a href="#csp" class="kb-nav-link">Content Security Policy (CSP)</a></li>
+        <li><a href="#hsts" class="kb-nav-link">HTTP Strict Transport Security (HSTS)</a></li>
+        <li><a href="#clickjacking" class="kb-nav-link">Clickjacking & X-Frame-Options</a></li>
+        <li><a href="#sniffing" class="kb-nav-link">MIME Sniffing Prevention</a></li>
+        <li><a href="#server-leak" class="kb-nav-link">Server Version Disclosures</a></li>
+      </ul>
+    </aside>
+
+    <div class="kb-content">
+      <!-- CSP Article -->
+      <article class="kb-article" id="csp">
+        <h2 class="kb-article-title">
+          <span class="badge badge-high" style="font-size: 14px;">High</span>
+          Content Security Policy (CSP)
+        </h2>
+        <div class="kb-article-meta">
+          <span class="badge badge-info">Security</span>
+          <span class="badge badge-low">Mitigation</span>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross-Site Scripting (XSS) and data injection attacks. These attacks are used for everything from data theft to site defacement or distribution of malware.
+        </p>
+        
+        <div class="kb-section-title">Recommended Directives</div>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          A basic secure policy requires loading scripts and resources only from the origin:
+        </p>
+        <div class="kb-code-block">
+          Content-Security-Policy: default-src 'self'; script-src 'self' https://trustedscripts.com; object-src 'none';
+        </div>
+
+        <div class="kb-section-title">Server Configuration Example (Nginx)</div>
+        <div class="kb-code-block">
+          add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; script-src 'self';" always;
+        </div>
+      </article>
+
+      <!-- HSTS Article -->
+      <article class="kb-article" id="hsts">
+        <h2 class="kb-article-title">
+          <span class="badge badge-medium" style="font-size: 14px;">Medium</span>
+          HTTP Strict Transport Security (HSTS)
+        </h2>
+        <div class="kb-article-meta">
+          <span class="badge badge-info">Security</span>
+          <span class="badge badge-low">Encryption</span>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          HSTS is a web security policy mechanism that helps to protect websites against man-in-the-middle attacks such as protocol downgrade attacks and cookie hijacking. It forces web browsers to access the site using HTTPS only.
+        </p>
+
+        <div class="kb-section-title">Server Configuration Example (Apache)</div>
+        <div class="kb-code-block">
+          Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        </div>
+      </article>
+
+      <!-- Clickjacking Article -->
+      <article class="kb-article" id="clickjacking">
+        <h2 class="kb-article-title">
+          <span class="badge badge-medium" style="font-size: 14px;">Medium</span>
+          Clickjacking & X-Frame-Options
+        </h2>
+        <div class="kb-article-meta">
+          <span class="badge badge-info">Security</span>
+          <span class="badge badge-low">Anti-Framing</span>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          Clickjacking is an attack that tricks a user into clicking a webpage element that is invisible or disguised as another element. This can cause users to unintentionally download malware, redirect to malicious pages, or expose sensitive details. The `X-Frame-Options` or CSP `frame-ancestors` directive mitigates this by instructing browsers not to embed the page inside a frame.
+        </p>
+
+        <div class="kb-section-title">Server Configuration Example (Nginx)</div>
+        <div class="kb-code-block">
+          add_header X-Frame-Options "SAMEORIGIN" always;
+        </div>
+      </article>
+
+      <!-- MIME Sniffing Article -->
+      <article class="kb-article" id="sniffing">
+        <h2 class="kb-article-title">
+          <span class="badge badge-low" style="font-size: 14px;">Low</span>
+          MIME Sniffing & X-Content-Type-Options
+        </h2>
+        <div class="kb-article-meta">
+          <span class="badge badge-info">Best Practices</span>
+          <span class="badge badge-low">Content Type</span>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          MIME sniffing is the practice of inspecting the content of a byte stream to attempt to deduce the file format of the data. If a server does not declare a correct Content-Type header, or if an attacker uploads a malicious file acting as an image, browsers might execute it as Javascript. Setting `nosniff` prevents this behavior.
+        </p>
+
+        <div class="kb-section-title">Server Configuration Example (Nginx)</div>
+        <div class="kb-code-block">
+          add_header X-Content-Type-Options "nosniff" always;
+        </div>
+      </article>
+
+      <!-- Server Leak Article -->
+      <article class="kb-article" id="server-leak">
+        <h2 class="kb-article-title">
+          <span class="badge badge-low" style="font-size: 14px;">Low</span>
+          Server Disclosures (Server & X-Powered-By)
+        </h2>
+        <div class="kb-article-meta">
+          <span class="badge badge-info">Information Leak</span>
+          <span class="badge badge-low">Hardening</span>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.6;">
+          HTTP headers that disclose the exact server brand, version, and operating system (e.g. `Apache/2.4.41 (Ubuntu) PHP/7.4.3`) help malicious actors find exact known CVE vulnerabilities associated with that deployment. Disabling version headers makes exploitation harder.
+        </p>
+
+        <div class="kb-section-title">Server Configuration Example (Apache)</div>
+        <div class="kb-code-block">
+          ServerTokens ProductOnly
+          ServerSignature Off
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+{% endblock %}

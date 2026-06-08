@@ -1,0 +1,76 @@
+{% extends 'layout.html' %}
+
+{% block title %}Create Next App - Ported to Flask{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <main class="main">
+    <img
+      id="nextjs-logo"
+      class="logo"
+      src="{{ url_for('static', filename='images/next.svg') }}"
+      alt="Next.js logo"
+      width="100"
+      height="20"
+    />
+    
+    <div class="intro">
+      <h1>To get started, edit the page.tsx file.</h1>
+      <p>
+        Looking for a starting point or more instructions? Head over to 
+        <a
+          id="templates-link"
+          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Templates
+        </a> 
+        or the 
+        <a
+          id="learning-link"
+          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learning
+        </a> 
+        center.
+      </p>
+    </div>
+    
+    <div class="ctas">
+      <a
+        id="deploy-link"
+        class="primary"
+        href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          id="vercel-logomark"
+          class="logo"
+          src="{{ url_for('static', filename='images/vercel.svg') }}"
+          alt="Vercel logomark"
+          width="16"
+          height="16"
+        />
+        Deploy Now
+      </a>
+      <a
+        id="docs-link"
+        class="secondary"
+        href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Documentation
+      </a>
+    </div>
+  </main>
+</div>
+{% endblock %}
